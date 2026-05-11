@@ -1,4 +1,4 @@
-# granel
+# karakolas_uploader
 
 Unattended product loader for [karakolas.net](https://karakolas.net).
 

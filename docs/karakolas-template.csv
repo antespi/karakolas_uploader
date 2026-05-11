@@ -1,0 +1,6 @@
+productor,nombre,precio_base,categoria,productor_id,descripcion,granel,pesar,destacado,temporada,precio_final,precio_productor
+Menudos Huertos,Calabaza,1.00,Verduras,460,"Se pide por unidades, se paga por kg",False,True,False,True,,
+Menudos Huertos,Tomate,1.00,Verduras,460,,True,False,False,True,,
+Menudos Huertos,Zanahoria,2.00,Verduras,460,,True,False,False,True,,
+Cervezas Veer,VEER 33cl,1.90,Bebidas,458,Rubia de fermentación alta.,False,False,False,True,,
+Cervezas Veer,VEER 75cl,4.40,Bebidas,458,Rubia de fermentación alta.,False,False,False,True,,

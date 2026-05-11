@@ -30,6 +30,7 @@ data/output/*
 
 # Run artifacts
 logs/
+!logs/.gitkeep
 *.log
 *.har
 

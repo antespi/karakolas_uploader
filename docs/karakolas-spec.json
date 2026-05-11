@@ -1,0 +1,105 @@
+{
+  "discovered_at": "2026-05-10T21:02:43Z",
+  "instance": "https://test.karakolas.org",
+  "group_id": "523",
+  "endpoints": {
+    "login_get": "/user.load/login",
+    "login_post": "/user.load/login",
+    "menu": "/karakolas/default/menu.load",
+    "producers_propios": "/productores/vista_productores.load?grupo={grupo}",
+    "producers_coordinados": "/productores/productores_coordinados.load?grupo={grupo}",
+    "products_editor_get": "/productores/productos.load?productor={productor}",
+    "products_editor_post": "/productores/productos.load?productor={productor}",
+    "products_export_csv": "/gestion_pedidos/exportar_productos.csv?auth_code={code}&productor={productor}"
+  },
+  "auth": {
+    "login_required_form_fields": [
+      "username",
+      "password",
+      "_formkey",
+      "_formname"
+    ],
+    "session_cookie": "session_id_karakolas"
+  },
+  "ultima_fila_semantics": "row_count_not_max_index",
+  "version": {
+    "version": "5.0.2",
+    "static_path": "/karakolas/static/_5.0.2",
+    "wiki_path": "https://karakolas.net"
+  },
+  "groups": [
+    {
+      "name": "La Comarca",
+      "grupo_id": "523"
+    }
+  ],
+  "propios_producers": [
+    {
+      "name": "Menudos Huertos",
+      "id": "460"
+    }
+  ],
+  "editor": {
+    "productox_tid_pattern": "ertable_{TID}_cell_{field}_{N}",
+    "campo_extra_tid_present": true,
+    "row_columns": [
+      "nombre",
+      "precio_base",
+      "descripcion",
+      "categoria",
+      "granel",
+      "pesar",
+      "destacado",
+      "temporada",
+      "precio_final",
+      "precio_productor"
+    ],
+    "bool_fields": [
+      "granel",
+      "pesar",
+      "destacado",
+      "temporada"
+    ],
+    "control_field_templates": [
+      "_ertable_{TID}_fields",
+      "_ertable_{TID}_paste_into_cell",
+      "_ertable_{TID}_sample_td_boolean",
+      "_ertable_{TID}_sample_td_decimal",
+      "_ertable_{TID}_sample_td_string",
+      "_ertable_{TID}_sample_th",
+      "_sample_row_{TID}",
+      "_table_name_{TID}",
+      "_ultima_fila_{TID}",
+      "submit",
+      "submit_and_go"
+    ],
+    "submit_button_label": "Grabar los cambios",
+    "categoria_label_to_id": {
+      "Aceites y grasas": "1079",
+      "Algas y plantas acuáticas": "1090",
+      "Alimentos": "1092",
+      "Aliños y conservantes": "1081",
+      "Bebidas": "1084",
+      "Carnes, aves y embutidos": "1076",
+      "Cereales y Legumbres": "1085",
+      "Chocolate y dulces": "1080",
+      "Comidas preparadas": "1083",
+      "Frutas": "1089",
+      "Frutos secos": "1075",
+      "Lácteos y huevos": "1078",
+      "Oficina": "1093",
+      "Panadería y bollería": "1082",
+      "Papel": "1094",
+      "Pescado y Marisco": "1077",
+      "Productos de limpieza e higiene": "1087",
+      "Ropa": "1091",
+      "Verduras": "1088",
+      "_Ninguna de las anteriores": "1086"
+    },
+    "sample_real_row_count": 3,
+    "sample_producer": {
+      "id": "460",
+      "name": "Menudos Huertos"
+    }
+  }
+}
