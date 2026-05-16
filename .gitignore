@@ -28,6 +28,9 @@ data/output/*
 !data/input/.gitkeep
 !data/output/.gitkeep
 
+# Docs
+docs/*.xlsx
+
 # Run artifacts
 logs/
 !logs/.gitkeep
