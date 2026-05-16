@@ -54,35 +54,35 @@ productor: La Vida a Granel
 # Vendor section-header label → karakolas categoria label.
 # Missing key, or null value → rows under it are skipped + logged.
 categorias:
-  "📁 ALGAS": Algas y plantas acuáticas
-  "📁 ALIMENTOS / BEBIDAS": Bebidas
-  "📁 ALIMENTOS / VARIOS": Alimentos
-  "📁 ARROCES": Cereales y Legumbres
-  "📁 AZUCAR, CACAO Y CHOCOLATE": Chocolate y dulces
-  "📁 CAFE": Bebidas
-  "📁 CEREALES Y COPOS": Cereales y Legumbres
-  "📁 ESPECIAS": Aliños y conservantes
-  "📁 FRUTAS DESHIDRATADAS": Frutas
-  "📁 FRUTOS SECOS": Frutos secos
-  "📁 HARINAS": Cereales y Legumbres
-  "📁 HIGIENE": Productos de limpieza e higiene
-  "📁 HOGAR": Productos de limpieza e higiene
-  "📁 INFUSIONES Y TE": Bebidas
-  "📁 LEGUMBRES": Cereales y Legumbres
-  "📁 PASTAS Y SEMOLAS": Cereales y Legumbres
-  "📁 SALES": Aliños y conservantes
-  "📁 SEMILLAS Y SUPERALIMENTOS": Alimentos
-  "📁 SETAS": Alimentos
-  "📁 VERDURAS DESHIDRATADAS": Verduras
+  "📁 ALGAS": { name: "Algas y plantas acuáticas" }
+  "📁 ALIMENTOS / BEBIDAS": { name: "Bebidas" }
+  "📁 ALIMENTOS / VARIOS": { name: "Alimentos" }
+  "📁 ARROCES": { name: "Cereales y Legumbres" }
+  "📁 AZUCAR, CACAO Y CHOCOLATE": { name: "Chocolate y dulces" }
+  "📁 CAFE": { name: "Bebidas" }
+  "📁 CEREALES Y COPOS": { name: "Cereales y Legumbres" }
+  "📁 ESPECIAS": { name: "Aliños y conservantes" }
+  "📁 FRUTAS DESHIDRATADAS": { name: "Frutas" }
+  "📁 FRUTOS SECOS": { name: "Frutos secos" }
+  "📁 HARINAS": { name: "Cereales y Legumbres" }
+  "📁 HIGIENE": { name: "Productos de limpieza e higiene" }
+  "📁 HOGAR": { name: "Productos de limpieza e higiene" }
+  "📁 INFUSIONES Y TE": { name: "Bebidas" }
+  "📁 LEGUMBRES": { name: "Cereales y Legumbres" }
+  "📁 PASTAS Y SEMOLAS": { name: "Cereales y Legumbres" }
+  "📁 SALES": { name: "Aliños y conservantes" }
+  "📁 SEMILLAS Y SUPERALIMENTOS": { name: "Alimentos" }
+  "📁 SETAS": { name: "Alimentos" }
+  "📁 VERDURAS DESHIDRATADAS": { name: "Verduras" }
 
 # UNIDAD cell value (case-insensitive) → granel/pesar booleans.
 unidades:
-  kg:       { granel: true,  pesar: true  }
-  Unidades: { granel: false, pesar: false }
+  kg:       { granel: true,  pesar: true  , description: "" }
+  Unidades: { granel: false, pesar: false , description: "Se pide por unidades, se paga por kg" }
 
 defaults:
   destacado: false
-  temporada: true
+  temporada: false
   precio_final: ""
   precio_productor: ""
   descripcion: ""
@@ -116,9 +116,9 @@ Per product row:
 | `productor`        | `yaml.productor`                                                       |
 | `nombre`           | normalize(PRODUCTO)                                                    |
 | `precio_base`      | `f"{PRECIO:.2f}"`                                                      |
-| `categoria`        | `yaml.categorias[current_section_header]`                              |
-| `productor_id`     | empty                                                                  |
-| `descripcion`      | `yaml.defaults.descripcion`                                            |
+| `categoria`        | `yaml.categorias[current_section_header].name`                         |
+| `productor_id`     | `yaml.productor_id`                                                    |
+| `descripcion`      | `yaml.unidades[UNIDAD.lower()].descripcion`                            |
 | `granel`           | `yaml.unidades[UNIDAD.lower()].granel`                                 |
 | `pesar`            | `yaml.unidades[UNIDAD.lower()].pesar`                                  |
 | `destacado`        | `yaml.defaults.destacado`                                              |
