@@ -1,6 +1,38 @@
+import openpyxl
 import pytest
 
-from scripts.preprocess.lavidaagranel import Config, load_config, normalize
+from scripts.preprocess.lavidaagranel import (
+    Config,
+    RawRow,
+    iter_rows,
+    load_config,
+    normalize,
+)
+
+
+def _build_fixture_xlsx(path):
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Pedidos Grupo Consumo"
+    ws.append(["LA VIDA A GRANEL"])
+    ws.append(["PEDIDOS GRUPO DE CONSUMO"])
+    ws.append(["Fecha"])
+    ws.append([])
+    ws.append(["PRODUCTO", "PRECIO", "UNIDAD",
+               "FAMILIA 1", "FAMILIA 2", "FAMILIA 3", "FAMILIA 4", "FAMILIA 5",
+               "FAMILIA 6", "FAMILIA 7", "FAMILIA 8", "FAMILIA 9", "FAMILIA 10",
+               "TOTAL"])
+    ws.append(["📁 ALGAS"])
+    ws.append(["ALGA KOMBU ECO 25G", 2.5, "Unidades"])
+    ws.append(["ALGA NORI 25G", 2.95, "Unidades"])
+    ws.append(["📁 LEGUMBRES"])
+    ws.append(["GARBANZO ECO", 3.20, "kg"])
+    ws.append(["📁 MYSTERY"])
+    ws.append(["UNKNOWN ITEM", 1.00, "kg"])
+    ws.append([None, None, None])
+    ws.append(["BROKEN PRICE", "", "kg"])
+    ws.append(["BROKEN UNIT", 1.00, ""])
+    wb.save(path)
 
 
 def test_normalize_basic_title_case():
@@ -73,3 +105,22 @@ def test_load_config_skips_null_category_values(tmp_path):
     cfg = load_config(p)
     assert "📁 MYSTERY" not in cfg.categorias
     assert cfg.categorias["📁 ALGAS"] == "Algas y plantas acuáticas"
+
+
+def test_iter_rows_yields_section_aware_rows(tmp_path):
+    xlsx = tmp_path / "min.xlsx"
+    _build_fixture_xlsx(xlsx)
+    rows = list(iter_rows(xlsx))
+    productos = [r for r in rows if r.kind == "product"]
+    assert [r.producto for r in productos] == [
+        "ALGA KOMBU ECO 25G",
+        "ALGA NORI 25G",
+        "GARBANZO ECO",
+        "UNKNOWN ITEM",
+        "BROKEN PRICE",
+        "BROKEN UNIT",
+    ]
+    assert productos[0].section == "📁 ALGAS"
+    assert productos[2].section == "📁 LEGUMBRES"
+    assert productos[3].section == "📁 MYSTERY"
+    assert productos[0].row_no == 7

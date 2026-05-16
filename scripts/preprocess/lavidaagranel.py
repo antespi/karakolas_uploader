@@ -1,8 +1,9 @@
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterator, Literal
 
+import openpyxl
 import yaml
 
 _DIGIT_LETTER_TOKEN = re.compile(r"^(\d+)([A-Za-z]+)$")
@@ -83,3 +84,48 @@ def load_config(path: Path) -> Config:
         unidades=unidades,
         defaults=defaults,
     )
+
+
+@dataclass(frozen=True)
+class RawRow:
+    kind: Literal["product", "section", "blank"]
+    row_no: int
+    section: str | None
+    producto: str | None
+    precio: Any
+    unidad: str | None
+
+
+_SHEET_NAME = "Pedidos Grupo Consumo"
+_DATA_START_ROW = 6
+
+
+def iter_rows(xlsx_path: Path) -> Iterator[RawRow]:
+    wb = openpyxl.load_workbook(xlsx_path, data_only=True, read_only=True)
+    ws = wb[_SHEET_NAME]
+    current_section: str | None = None
+    row_no = 0
+    for raw in ws.iter_rows(values_only=True):
+        row_no += 1
+        if row_no < _DATA_START_ROW:
+            continue
+        a = raw[0] if len(raw) > 0 else None
+        b = raw[1] if len(raw) > 1 else None
+        c = raw[2] if len(raw) > 2 else None
+        if a is None and b is None and c is None:
+            yield RawRow(kind="blank", row_no=row_no, section=current_section,
+                         producto=None, precio=None, unidad=None)
+            continue
+        if isinstance(a, str) and a.startswith("📁"):
+            current_section = a.strip()
+            yield RawRow(kind="section", row_no=row_no, section=current_section,
+                         producto=None, precio=None, unidad=None)
+            continue
+        yield RawRow(
+            kind="product",
+            row_no=row_no,
+            section=current_section,
+            producto=str(a) if a is not None else None,
+            precio=b,
+            unidad=str(c) if c is not None else None,
+        )
