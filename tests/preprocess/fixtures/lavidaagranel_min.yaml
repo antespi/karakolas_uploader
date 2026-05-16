@@ -1,0 +1,15 @@
+productor: La Vida a Granel
+
+categorias:
+  "📁 ALGAS": { name: "Algas y plantas acuáticas" }
+  "📁 LEGUMBRES": { name: "Cereales y Legumbres" }
+
+unidades:
+  kg:       { granel: true,  pesar: true,  descripcion: "" }
+  Unidades: { granel: false, pesar: false, descripcion: "Se pide por unidades, se paga por kg" }
+
+defaults:
+  destacado: false
+  temporada: false
+  precio_final: ""
+  precio_productor: ""
