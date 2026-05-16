@@ -1,4 +1,5 @@
 from dataclasses import dataclass, fields
+from decimal import Decimal, InvalidOperation
 
 ALLOWED_CATEGORIAS = frozenset({
     "Aceites y grasas",
@@ -42,3 +43,27 @@ class KarakolasRow:
     @staticmethod
     def column_order() -> tuple[str, ...]:
         return tuple(f.name for f in fields(KarakolasRow))
+
+
+def _is_nonneg_decimal(value: str) -> bool:
+    try:
+        return Decimal(value) >= 0
+    except (InvalidOperation, ValueError):
+        return False
+
+
+def validate(row: KarakolasRow) -> list[str]:
+    errors: list[str] = []
+    if not row.productor.strip():
+        errors.append("productor empty")
+    if not row.nombre.strip():
+        errors.append("nombre empty")
+    if not _is_nonneg_decimal(row.precio_base):
+        errors.append("precio_base not decimal >= 0")
+    if row.categoria not in ALLOWED_CATEGORIAS:
+        errors.append(f"categoria '{row.categoria}' not in allowed list")
+    if row.precio_final != "" and not _is_nonneg_decimal(row.precio_final):
+        errors.append("precio_final not decimal >= 0")
+    if row.precio_productor != "" and not _is_nonneg_decimal(row.precio_productor):
+        errors.append("precio_productor not decimal >= 0")
+    return errors
