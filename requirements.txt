@@ -11,6 +11,9 @@ greenlet==3.5.0
 idna==3.13
 lxml==6.1.0
 markdown-it-py==4.2.0
+openpyxl
+pytest
+PyYAML
 mdurl==0.1.2
 msgspec==0.21.1
 orjson==3.11.9
