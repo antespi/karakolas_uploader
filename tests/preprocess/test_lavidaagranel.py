@@ -32,6 +32,7 @@ def _build_fixture_xlsx(path):
     ws.append(["📁 MYSTERY"])
     ws.append(["UNKNOWN ITEM", 1.00, "kg"])
     ws.append([None, None, None])
+    ws.append(["📁 ALGAS"])
     ws.append(["BROKEN PRICE", "", "kg"])
     ws.append(["BROKEN UNIT", 1.00, ""])
     wb.save(path)
@@ -125,6 +126,7 @@ def test_iter_rows_yields_section_aware_rows(tmp_path):
     assert productos[0].section == "📁 ALGAS"
     assert productos[2].section == "📁 LEGUMBRES"
     assert productos[3].section == "📁 MYSTERY"
+    assert productos[4].section == "📁 ALGAS"
     assert productos[0].row_no == 7
 
 
@@ -193,3 +195,76 @@ def test_map_row_no_current_section_skipped(fixtures_dir):
                  producto="ORPHAN", precio=1.0, unidad="kg")
     result = map_row(raw, cfg)
     assert result.skip_reason == "no_section"
+
+
+from datetime import date
+
+
+def test_run_integration(tmp_path, fixtures_dir):
+    from scripts.preprocess.lavidaagranel import run
+
+    xlsx = tmp_path / "min.xlsx"
+    _build_fixture_xlsx(xlsx)
+    out_dir = tmp_path / "out"
+    log_dir = tmp_path / "logs"
+
+    summary = run(
+        xlsx=xlsx,
+        config=fixtures_dir / "lavidaagranel_min.yaml",
+        out_dir=out_dir,
+        log_dir=log_dir,
+        today=date(2026, 5, 16),
+    )
+
+    assert summary == {
+        "read": 6,
+        "emitted": 3,
+        "skipped_unmapped": 1,
+        "skipped_invalid": 2,
+        "skipped_dedup": 0,
+        "rejected": 0,
+    }
+
+    csv_path = out_dir / "2026-05-16-karakolas-lavidaagranel.csv"
+    log_path = log_dir / "2026-05-16-preprocess-lavidaagranel.log"
+    assert csv_path.exists()
+    assert log_path.exists()
+
+    csv_lines = csv_path.read_text(encoding="utf-8").splitlines()
+    assert len(csv_lines) == 1 + 3
+    assert "Alga Kombu Eco 25g" in csv_lines[1]
+    assert "Garbanzo Eco" in csv_lines[3]
+
+    log_text = log_path.read_text(encoding="utf-8")
+    assert "unmapped_category" in log_text
+    assert "missing_price" in log_text
+    assert "missing_unit" in log_text
+    assert "SUMMARY" in log_text
+
+
+def test_run_dedup(tmp_path, fixtures_dir):
+    from scripts.preprocess.lavidaagranel import run
+
+    xlsx = tmp_path / "dup.xlsx"
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Pedidos Grupo Consumo"
+    for _ in range(4):
+        ws.append([])
+    ws.append(["PRODUCTO", "PRECIO", "UNIDAD"])
+    ws.append(["📁 ALGAS"])
+    ws.append(["ALGA KOMBU ECO 25G", 2.5, "Unidades"])
+    ws.append(["alga kombu eco 25g", 2.5, "Unidades"])
+    wb.save(xlsx)
+
+    out_dir = tmp_path / "out"
+    log_dir = tmp_path / "logs"
+    summary = run(
+        xlsx=xlsx,
+        config=fixtures_dir / "lavidaagranel_min.yaml",
+        out_dir=out_dir,
+        log_dir=log_dir,
+        today=date(2026, 5, 16),
+    )
+    assert summary["emitted"] == 1
+    assert summary["skipped_dedup"] == 1

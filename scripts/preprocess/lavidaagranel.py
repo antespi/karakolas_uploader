@@ -1,5 +1,8 @@
+import argparse
 import re
+import sys
 from dataclasses import dataclass
+from datetime import date as _date
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any, Iterator, Literal
@@ -7,7 +10,7 @@ from typing import Any, Iterator, Literal
 import openpyxl
 import yaml
 
-from scripts.preprocess._common import KarakolasRow
+from scripts.preprocess._common import KarakolasRow, validate, write_csv
 
 _DIGIT_LETTER_TOKEN = re.compile(r"^(\d+)([A-Za-z]+)$")
 
@@ -179,3 +182,122 @@ def map_row(raw: RawRow, cfg: Config) -> MappedResult:
         precio_productor=str(d["precio_productor"]),
     )
     return MappedResult(row, None)
+
+
+_SKIP_REASON_BUCKET = {
+    "no_section": "skipped_invalid",
+    "unmapped_category": "skipped_unmapped",
+    "missing_producto": "skipped_invalid",
+    "missing_price": "skipped_invalid",
+    "missing_unit": "skipped_invalid",
+}
+
+
+def _log(fh, level: str, row_no: int, category: str | None,
+         nombre: str | None, msg: str) -> None:
+    fh.write(
+        f"{level}\trow={row_no}\tcategory={category or '-'}\t"
+        f"nombre={nombre or '-'}\t{msg}\n"
+    )
+
+
+def run(
+    *,
+    xlsx: Path,
+    config: Path,
+    out_dir: Path,
+    log_dir: Path,
+    today: _date | None = None,
+) -> dict[str, int]:
+    today = today or _date.today()
+    cfg = load_config(config)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    log_dir.mkdir(parents=True, exist_ok=True)
+    csv_path = out_dir / f"{today.isoformat()}-karakolas-lavidaagranel.csv"
+    log_path = log_dir / f"{today.isoformat()}-preprocess-lavidaagranel.log"
+
+    summary = {
+        "read": 0,
+        "emitted": 0,
+        "skipped_unmapped": 0,
+        "skipped_invalid": 0,
+        "skipped_dedup": 0,
+        "rejected": 0,
+    }
+
+    emitted_rows: list[KarakolasRow] = []
+    seen: set[tuple[str, str]] = set()
+
+    with log_path.open("w", encoding="utf-8") as logfh:
+        for raw in iter_rows(xlsx):
+            if raw.kind != "product":
+                continue
+            summary["read"] += 1
+            result = map_row(raw, cfg)
+            if result.skip_reason is not None:
+                bucket = _SKIP_REASON_BUCKET[result.skip_reason]
+                summary[bucket] += 1
+                _log(logfh, "WARN", raw.row_no, raw.section, raw.producto,
+                     result.skip_reason)
+                continue
+            row = result.row
+            key = (row.productor, row.nombre)
+            if key in seen:
+                summary["skipped_dedup"] += 1
+                _log(logfh, "WARN", raw.row_no, raw.section, row.nombre,
+                     "duplicate_nombre")
+                continue
+            errs = validate(row)
+            if errs:
+                summary["rejected"] += 1
+                _log(logfh, "ERROR", raw.row_no, raw.section, row.nombre,
+                     "; ".join(errs))
+                continue
+            seen.add(key)
+            emitted_rows.append(row)
+            summary["emitted"] += 1
+
+        write_csv(emitted_rows, csv_path)
+
+        logfh.write("\nSUMMARY\n")
+        for k in ("read", "emitted", "skipped_unmapped", "skipped_invalid",
+                  "skipped_dedup", "rejected"):
+            logfh.write(f"  {k:<18} {summary[k]}\n")
+
+    return summary
+
+
+def _exit_code(summary: dict[str, int]) -> int:
+    bad = (summary["skipped_unmapped"] + summary["skipped_invalid"]
+           + summary["skipped_dedup"] + summary["rejected"])
+    return 1 if bad else 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    p = argparse.ArgumentParser(prog="preprocess.lavidaagranel")
+    p.add_argument("--xlsx", type=Path,
+                   default=Path("docs/Pedidos_LaVidaAGranel_original.xlsx"))
+    p.add_argument("--config", type=Path,
+                   default=Path("scripts/preprocess/lavidaagranel.yaml"))
+    p.add_argument("--out-dir", type=Path, default=Path("data/output"))
+    p.add_argument("--log-dir", type=Path, default=Path("logs"))
+    args = p.parse_args(argv)
+
+    try:
+        summary = run(
+            xlsx=args.xlsx,
+            config=args.config,
+            out_dir=args.out_dir,
+            log_dir=args.log_dir,
+        )
+    except (OSError, ValueError, yaml.YAMLError) as exc:
+        print(f"FATAL: {exc}", file=sys.stderr)
+        return 2
+
+    for k, v in summary.items():
+        print(f"{k:<18} {v}")
+    return _exit_code(summary)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
