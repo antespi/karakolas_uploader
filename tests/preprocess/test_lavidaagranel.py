@@ -268,3 +268,21 @@ def test_run_dedup(tmp_path, fixtures_dir):
     )
     assert summary["emitted"] == 1
     assert summary["skipped_dedup"] == 1
+
+
+def test_run_idempotent(tmp_path, fixtures_dir):
+    from scripts.preprocess.lavidaagranel import run
+
+    xlsx = tmp_path / "min.xlsx"
+    _build_fixture_xlsx(xlsx)
+    out_a = tmp_path / "a"
+    out_b = tmp_path / "b"
+    log_a = tmp_path / "la"
+    log_b = tmp_path / "lb"
+    args = dict(xlsx=xlsx, config=fixtures_dir / "lavidaagranel_min.yaml",
+                today=date(2026, 5, 16))
+    run(out_dir=out_a, log_dir=log_a, **args)
+    run(out_dir=out_b, log_dir=log_b, **args)
+    csv_a = (out_a / "2026-05-16-karakolas-lavidaagranel.csv").read_bytes()
+    csv_b = (out_b / "2026-05-16-karakolas-lavidaagranel.csv").read_bytes()
+    assert csv_a == csv_b
