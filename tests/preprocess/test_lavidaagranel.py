@@ -3,9 +3,11 @@ import pytest
 
 from scripts.preprocess.lavidaagranel import (
     Config,
+    MappedResult,
     RawRow,
     iter_rows,
     load_config,
+    map_row,
     normalize,
 )
 
@@ -124,3 +126,70 @@ def test_iter_rows_yields_section_aware_rows(tmp_path):
     assert productos[2].section == "📁 LEGUMBRES"
     assert productos[3].section == "📁 MYSTERY"
     assert productos[0].row_no == 7
+
+
+def _cfg(fixtures_dir):
+    return load_config(fixtures_dir / "lavidaagranel_min.yaml")
+
+
+def test_map_row_happy_unidades(fixtures_dir):
+    cfg = _cfg(fixtures_dir)
+    raw = RawRow(kind="product", row_no=7, section="📁 ALGAS",
+                 producto="ALGA KOMBU ECO 25G", precio=2.5, unidad="Unidades")
+    result = map_row(raw, cfg)
+    assert result.skip_reason is None
+    row = result.row
+    assert row.productor == "La Vida a Granel"
+    assert row.nombre == "Alga Kombu Eco 25g"
+    assert row.precio_base == "2.50"
+    assert row.categoria == "Algas y plantas acuáticas"
+    assert row.granel is False
+    assert row.pesar is False
+    assert row.descripcion == "Se pide por unidades, se paga por kg"
+    assert row.productor_id == ""
+    assert row.temporada is False
+
+
+def test_map_row_happy_kg(fixtures_dir):
+    cfg = _cfg(fixtures_dir)
+    raw = RawRow(kind="product", row_no=10, section="📁 LEGUMBRES",
+                 producto="GARBANZO ECO", precio=3.2, unidad="kg")
+    result = map_row(raw, cfg)
+    assert result.skip_reason is None
+    assert result.row.precio_base == "3.20"
+    assert result.row.granel is True
+    assert result.row.pesar is True
+    assert result.row.descripcion == ""
+
+
+def test_map_row_unmapped_category_skipped(fixtures_dir):
+    cfg = _cfg(fixtures_dir)
+    raw = RawRow(kind="product", row_no=12, section="📁 MYSTERY",
+                 producto="UNKNOWN ITEM", precio=1.0, unidad="kg")
+    result = map_row(raw, cfg)
+    assert result.skip_reason == "unmapped_category"
+    assert result.row is None
+
+
+def test_map_row_missing_price_skipped(fixtures_dir):
+    cfg = _cfg(fixtures_dir)
+    raw = RawRow(kind="product", row_no=14, section="📁 ALGAS",
+                 producto="BROKEN PRICE", precio=None, unidad="kg")
+    result = map_row(raw, cfg)
+    assert result.skip_reason == "missing_price"
+
+
+def test_map_row_missing_unit_skipped(fixtures_dir):
+    cfg = _cfg(fixtures_dir)
+    raw = RawRow(kind="product", row_no=15, section="📁 ALGAS",
+                 producto="BROKEN UNIT", precio=1.0, unidad=None)
+    result = map_row(raw, cfg)
+    assert result.skip_reason == "missing_unit"
+
+
+def test_map_row_no_current_section_skipped(fixtures_dir):
+    cfg = _cfg(fixtures_dir)
+    raw = RawRow(kind="product", row_no=6, section=None,
+                 producto="ORPHAN", precio=1.0, unidad="kg")
+    result = map_row(raw, cfg)
+    assert result.skip_reason == "no_section"

@@ -1,10 +1,13 @@
 import re
 from dataclasses import dataclass
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any, Iterator, Literal
 
 import openpyxl
 import yaml
+
+from scripts.preprocess._common import KarakolasRow
 
 _DIGIT_LETTER_TOKEN = re.compile(r"^(\d+)([A-Za-z]+)$")
 
@@ -129,3 +132,50 @@ def iter_rows(xlsx_path: Path) -> Iterator[RawRow]:
             precio=b,
             unidad=str(c) if c is not None else None,
         )
+
+
+@dataclass(frozen=True)
+class MappedResult:
+    row: KarakolasRow | None
+    skip_reason: str | None
+
+
+def _format_price(value: Any) -> str | None:
+    if value is None or value == "":
+        return None
+    try:
+        d = Decimal(str(value))
+    except (InvalidOperation, ValueError):
+        return None
+    return f"{d:.2f}"
+
+
+def map_row(raw: RawRow, cfg: Config) -> MappedResult:
+    if raw.section is None:
+        return MappedResult(None, "no_section")
+    if raw.section not in cfg.categorias:
+        return MappedResult(None, "unmapped_category")
+    if raw.producto is None or not str(raw.producto).strip():
+        return MappedResult(None, "missing_producto")
+    precio = _format_price(raw.precio)
+    if precio is None:
+        return MappedResult(None, "missing_price")
+    if not raw.unidad or raw.unidad.lower() not in cfg.unidades:
+        return MappedResult(None, "missing_unit")
+    unidad = cfg.unidades[raw.unidad.lower()]
+    d = cfg.defaults
+    row = KarakolasRow(
+        productor=cfg.productor,
+        nombre=normalize(raw.producto),
+        precio_base=precio,
+        categoria=cfg.categorias[raw.section],
+        productor_id=cfg.productor_id,
+        descripcion=unidad["descripcion"],
+        granel=unidad["granel"],
+        pesar=unidad["pesar"],
+        destacado=bool(d["destacado"]),
+        temporada=bool(d["temporada"]),
+        precio_final=str(d["precio_final"]),
+        precio_productor=str(d["precio_productor"]),
+    )
+    return MappedResult(row, None)
