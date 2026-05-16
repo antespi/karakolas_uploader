@@ -1,5 +1,8 @@
+import csv
 from dataclasses import dataclass, fields
 from decimal import Decimal, InvalidOperation
+from pathlib import Path
+from typing import Iterable
 
 ALLOWED_CATEGORIAS = frozenset({
     "Aceites y grasas",
@@ -67,3 +70,24 @@ def validate(row: KarakolasRow) -> list[str]:
     if row.precio_productor != "" and not _is_nonneg_decimal(row.precio_productor):
         errors.append("precio_productor not decimal >= 0")
     return errors
+
+
+def _serialize(row: KarakolasRow, columns: tuple[str, ...]) -> list[str]:
+    out: list[str] = []
+    for col in columns:
+        v = getattr(row, col)
+        if isinstance(v, bool):
+            out.append("True" if v else "False")
+        else:
+            out.append(str(v))
+    return out
+
+
+def write_csv(rows: Iterable[KarakolasRow], path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    columns = KarakolasRow.column_order()
+    with path.open("w", encoding="utf-8", newline="") as f:
+        writer = csv.writer(f, lineterminator="\n")
+        writer.writerow(columns)
+        for row in rows:
+            writer.writerow(_serialize(row, columns))

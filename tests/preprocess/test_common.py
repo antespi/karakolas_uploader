@@ -2,6 +2,7 @@ from scripts.preprocess._common import (
     ALLOWED_CATEGORIAS,
     KarakolasRow,
     validate,
+    write_csv,
 )
 
 
@@ -102,3 +103,34 @@ def test_validate_empty_optional_prices_ok():
 def test_validate_collects_multiple_errors():
     errs = validate(_good_row(productor="", categoria="Fantasía"))
     assert set(errs) == {"productor empty", "categoria 'Fantasía' not in allowed list"}
+
+
+def test_write_csv_emits_header_and_rows_in_order(tmp_path):
+    out = tmp_path / "out.csv"
+    rows = [
+        _good_row(),
+        _good_row(nombre="Otro", precio_base="3.00", granel=False, pesar=False),
+    ]
+    write_csv(rows, out)
+    text = out.read_text(encoding="utf-8")
+    lines = text.splitlines()
+    assert lines[0] == (
+        "productor,nombre,precio_base,categoria,productor_id,descripcion,"
+        "granel,pesar,destacado,temporada,precio_final,precio_productor"
+    )
+    assert lines[1] == (
+        'La Vida a Granel,Alga Kombu Eco 25g,2.50,Algas y plantas acuáticas,,,'
+        "True,True,False,False,,"
+    )
+    assert lines[2] == (
+        "La Vida a Granel,Otro,3.00,Algas y plantas acuáticas,,,"
+        "False,False,False,False,,"
+    )
+
+
+def test_write_csv_quotes_commas_in_strings(tmp_path):
+    out = tmp_path / "out.csv"
+    rows = [_good_row(descripcion="Hola, mundo")]
+    write_csv(rows, out)
+    line = out.read_text(encoding="utf-8").splitlines()[1]
+    assert '"Hola, mundo"' in line
