@@ -7,6 +7,9 @@ from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any, Iterator, Literal
 
+if __name__ == "__main__" and __package__ is None:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
 import openpyxl
 import yaml
 
