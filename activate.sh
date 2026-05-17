@@ -25,12 +25,12 @@ if [ -d "$GRANEL_ROOT/.venv" ]; then
 fi
 
 # Load .env if present (KEY=VALUE lines, no export needed)
-if [ -f "$GRANEL_ROOT/.env" ]; then
-    set -a
-    # shellcheck disable=SC1091
-    . "$GRANEL_ROOT/.env"
-    set +a
-fi
+# if [ -f "$GRANEL_ROOT/.env" ]; then
+#     set -a
+#     # shellcheck disable=SC1091
+#     . "$GRANEL_ROOT/.env"
+#     set +a
+# fi
 
 echo "granel env loaded:"
 echo "  GRANEL_ROOT=$GRANEL_ROOT"

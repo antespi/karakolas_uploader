@@ -560,6 +560,9 @@ def main(argv: list[str] | None = None) -> int:
     user = env.get("KARAKOLAS_USER")
     password = env.get("KARAKOLAS_PASS")
     group_id = env.get("KARAKOLAS_GROUP_ID") or env.get("KARAKOLAS_GROUP")
+    log.info("base_url = %s" % base_url)
+    log.info("user = %s" % user)
+    log.info("group_id = %s" % group_id)
     missing = [
         k
         for k, v in {

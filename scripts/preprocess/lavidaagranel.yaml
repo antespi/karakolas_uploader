@@ -26,11 +26,11 @@ categorias:
 
 # UNIDAD cell value (case-insensitive) → granel/pesar booleans + per-unidad descripcion.
 unidades:
-  kg:       { granel: true,  pesar: true,  descripcion: "" }
-  Unidades: { granel: false, pesar: false, descripcion: "Se pide por unidades, se paga por kg" }
+  kg:       { granel: true,  pesar: true,  descripcion: "Se pide por kilos (0,1 kg para pedir 100 gramos)" }
+  Unidades: { granel: false, pesar: false, descripcion: "Se pide por unidades" }
 
 defaults:
   destacado: false
-  temporada: false
+  temporada: true
   precio_final: ""
   precio_productor: ""
